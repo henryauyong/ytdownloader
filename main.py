@@ -1,4 +1,3 @@
-# download button will default to download mp4 at 720p
 from os import remove
 from pytube import YouTube
 from pytube.streams import Stream
@@ -10,12 +9,37 @@ from PIL import Image, ImageTk
 import requests
 from io import BytesIO
 
-yt = None
-videoAttributes = {'title':"", 'thumbnailUrl':""}
+# video: Video object
+# videos: list of Video objects
+# videoList: ?
+# videoListlist: tk.Listbox
 videos = []
 
+# todo
+# considering making resolution and format argument of download()
+# add thumbnail preview
+
+class Video:
+    # url is a string here (sadly)
+    def __init__(self, url):
+        self.url = url
+        try:
+            self.yt = YouTube(self.url)
+            self.title = self.yt.title
+            self.thumbnail_url = self.yt.thumbnail_url
+            self.format = "mp4"
+            self.resolution = "720p"
+            # thumbnail url
+        except Exception as e:
+            print(e)
+            self.yt = None
+            self.title = "[invalid video]"
+            self.thumbnail_url = None
+            self.format = None
+            self.resolution = None
+
 def searchStream():
-    global inputname, yt, status, url, choices, frame
+    global inputname, yt, status, url, videoList, frame
     status.config(text = "searching for stream...")
 
     try:
@@ -24,25 +48,6 @@ def searchStream():
         status.config(text = "Invalid url")
         inputname.delete(0, END)
         return
-    
-    # check if it is a playlist
-    if "&list=" in url.get():
-        playlist = Playlist(url.get())
-        for playlisturl in playlist.video_urls:
-            videoAttributes['title'] = YouTube(playlisturl).title
-            videoAttributes['thumbnailUrl'] = YouTube(playlisturl).thumbnail_url
-            videos.append(videoAttributes)
-            choices.append(videoAttributes['title'])
-            choicesvar.set(choices)
-            inputname.delete(0, END)
-    # if not
-    else:
-        videoAttributes['title'] = yt.title
-        videoAttributes['thumbnailUrl'] = yt.thumbnail_url
-        videos.append(videoAttributes)
-        choices.append(videoAttributes['title'])
-        choicesvar.set(choices)
-        inputname.delete(0, END)
 
 """
     availableMp4 = yt.streams.filter(file_extension='mp4', type="video")
@@ -50,7 +55,6 @@ def searchStream():
     for i in range(len(availableMp4)):
         if(availableMp4[i - 1].resolution != availableMp4[i].resolution):
             print(availableMp4[i].resolution)
-
     availableMp3 = yt.streams.filter(type='audio')
     print("mp3: ")
     for i in range(len(availableMp3)):
@@ -60,49 +64,65 @@ def searchStream():
     #download("mp4", "720p")
     
 
-def download(format, resolution=None):
-    global status
-    if(format == 'mp4'):
-        try:
-            stream = yt.streams.filter(res=resolution)[0]
-            print(stream)
-            stream.download(output_path='Python/video')
-            status.config(text = "download completed! check Python/video/")
-        except Exception as e:
-            print(e)
-    if(format == 'mp3'):
-        try:
-            stream = yt.streams.filter(type='audio')[0]
-            print(stream)
-            stream.download(output_path='Python/video')
-            status.config(text = "download completed! check Python/video/")
-        except Exception as e:
-            print(e)
+# download the whole list of vids
+def download():
+    global videoList, status
+    for video in videos:
+        if(video.format == 'mp4'):
+            try:
+                stream = yt.streams.filter(res=video.resolution)[0]
+                #print(stream)
+                stream.download(output_path='video')
+                status.config(text = "download completed! check video/")
+            except Exception as e:
+                print(e)
+        if(video.format == 'mp3'):
+            try:
+                stream = yt.streams.filter(type='audio')[0]
+                print(stream)
+                stream.download(output_path='video')
+                status.config(text = "download completed! check video/")
+            except Exception as e:
+                print(e)
+
+def addEntry():
+    global inputname, yt, status, url, videoList, frame
+    # check if url is a playlist
+    if "&list=" in url.get():
+        playlist = Playlist(url.get())
+        for playlisturl in playlist.video_urls:
+            video = Video(playlisturl)
+            videos.append(video)
+            videoList.append(video.title)
+            videoListvar.set(videoList)
+            inputname.delete(0, END)
+    # if url is a video
+    else:
+        video = Video(url.get())
+        videos.append(video)
+        videoList.append(video.title)
+        videoListvar.set(videoList)
+        inputname.delete(0, END)
 
 def removeEntry(*args):
-    if len(choices) > 0:
-        selection = choiceslist.curselection()
-        choices.pop(selection[0])
-        choicesvar.set(choices)
+    if len(videoList) > 0:
+        selection = videoListlist.curselection()
+        videoList.pop(selection[0])
+        videos.pop(selection[0])
+        videoListvar.set(videoList)
 
 def openEdit(*args):
-
-    selection = choiceslist.curselection()
-    print(selection[0])
-
-"""
-    selectedVideo = (videos[selection[0]])['thumbnailUrl'])
-    response = requests.get(selectedVideo)
+    global thumbnail
+    selection = videoListlist.curselection()
+    thumbnailUrl = videos[selection[0]].thumbnail_url
+    response = requests.get(thumbnailUrl)
     img = ImageTk.PhotoImage(Image.open(BytesIO(response.content)))
     thumbnail['image'] = img
     thumbnail.image = img
-"""
 
-def test(*args):
-    print("Hello")
 
 def main():
-    global inputname, status, url, choices, frame, choicesvar, choiceslist, inputname, thumbnail
+    global inputname, status, url, videoList, frame, videoListvar, videoListlist, inputname, thumbnail
 
     # window configuration
     window = tkinter.Tk()
@@ -124,28 +144,32 @@ def main():
     inputname.focus()
 
     # list and scrollbar
-    choices = []
-    choicesvar = StringVar(value=choices)
-    choiceslist = Listbox(frame, listvariable=choicesvar)
-    scrollbar = ttk.Scrollbar(frame, orient=VERTICAL, command=choiceslist.yview)
-    choiceslist.config(yscrollcommand=scrollbar.set)
-    choiceslist.bind("<<ListboxSelect>>", openEdit)
+    videoList = []
+    videoListvar = StringVar(value=videoList)
+    videoListlist = Listbox(frame, listvariable=videoListvar)
+    scrollbar = ttk.Scrollbar(frame, orient=VERTICAL, command=videoListlist.yview)
+    videoListlist.config(yscrollcommand=scrollbar.set)
+    videoListlist.bind("<<ListboxSelect>>", openEdit)
 
     # add and remove button
-    inputbutton = tkinter.Button(frame, text="Add", command=searchStream)
+    inputbutton = tkinter.Button(frame, text="Add", command=addEntry)
     removebutton = tkinter.Button(frame, text="Remove", command=removeEntry)
     status = tkinter.Label(frame, text="")
+
+    # download button
+    #downloadButton = tkinter.Button(frame, text="Download", commmand=download)
 
     # thumbnail
     thumbnail = tkinter.Label(editFrame, text="Please select a video",image="")
 
     # widgets grid configuration
     inputname.grid(column=1, row=0, sticky=(W, E))
-    choiceslist.grid(column=0, row=1, columnspan=3, sticky=(N, E, S, W))
+    videoListlist.grid(column=0, row=1, columnspan=3, sticky=(N, E, S, W))
     scrollbar.grid(column=3, row=1, sticky=(N, S, W))
     inputbutton.grid(column=2, row=0, sticky=(W))
     removebutton.grid(column=3, row=0, sticky=())
     status.grid(column=0, row=2)
+    #downloadButton.grid(column=4, row=2)
     thumbnail.grid(column=0, row=0)
 
     # frame configuration
