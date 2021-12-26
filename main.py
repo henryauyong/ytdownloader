@@ -4,7 +4,7 @@ from pytube.streams import Stream
 from pytube import Playlist
 import tkinter
 from tkinter import ttk
-from tkinter import *
+from tkinter import N, W, E, S
 from PIL import Image, ImageTk
 import requests
 from io import BytesIO
@@ -16,14 +16,13 @@ from io import BytesIO
 videos = []
 
 # todo
-# considering making resolution and format argument of download()
-# add thumbnail preview
+# dropdown menu for resolution & format
+# 1080p download
+# make download a method of Video,
+# and add a button to download only the current selected vid
 
 class Video:
-    # url is a string here (sadly)
     def __init__(self, url):
-        global status
-        status.config(text="Searching for video...")
         self.url = url
         try:
             self.yt = YouTube(self.url)
@@ -49,8 +48,7 @@ class Video:
             self.availableResolution = None
             availableMp4 = None
             self.stream = None
-        status.config(text="Done")
-    def findStream():
+    def searchStream():
         pass
     def getThumbnail(self):
         imgResponse = requests.get(self.thumbnailUrl)
@@ -69,7 +67,8 @@ def download():
     status.config(text="Download completed! check video/")
 
 def addEntry():
-    global inputname, yt, status, urlVar, videoList, frame
+    global inputname, status, urlVar, videoList, frame
+    status.config(text="Adding video...")
     url = urlVar.get()
     # check if url is a playlist
     # could be &list=... or ?list=...
@@ -84,9 +83,9 @@ def addEntry():
         video = Video(url)
         videos.append(video)
         videoList.append(video.title)
-
     videoListvar.set(videoList)
-    inputname.delete(0, END)
+    inputname.delete(0, tkinter.END) # clear input field
+    status.config(text="Done")
 
 def removeEntry(*args):
     if len(videoList) > 0:
@@ -102,7 +101,7 @@ def openEdit(*args):
     thumbnailLabel.image = videos[selection].thumbnail
 
 def main():
-    global inputname, status, urlVar, videoList, frame, videoListvar, videoListbox, inputname, thumbnailLabel
+    global frame, inputname, status, urlVar, videoList, videoListvar, videoListbox, thumbnailLabel
 
     # window configuration
     window = tkinter.Tk()
@@ -119,15 +118,15 @@ def main():
     ttk.Label(frame, text="Enter URL: ").grid(column=0, row=0)
 
     # input url
-    urlVar = StringVar()
+    urlVar = tkinter.StringVar()
     inputname = tkinter.Entry(frame, textvariable=urlVar)
     inputname.focus()
 
     # list and scrollbar
     videoList = []
-    videoListvar = StringVar(value=videoList)
-    videoListbox = Listbox(frame, listvariable=videoListvar)
-    scrollbar = ttk.Scrollbar(frame, orient=VERTICAL, command=videoListbox.yview)
+    videoListvar = tkinter.StringVar(value=videoList)
+    videoListbox = tkinter.Listbox(frame, listvariable=videoListvar)
+    scrollbar = ttk.Scrollbar(frame, orient=tkinter.VERTICAL, command=videoListbox.yview)
     videoListbox.config(yscrollcommand=scrollbar.set)
     videoListbox.bind("<<ListboxSelect>>", openEdit)
 
