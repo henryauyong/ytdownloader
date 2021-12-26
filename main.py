@@ -26,7 +26,7 @@ class Video:
         try:
             self.yt = YouTube(self.url)
             self.title = self.yt.title
-            self.thumbnail_url = self.yt.thumbnail_url
+            self.thumbnailurl = self.yt.thumbnail_url
             self.format = "mp4"
             self.resolution = "720p"
             # thumbnail url
@@ -34,7 +34,7 @@ class Video:
             print(e)
             self.yt = None
             self.title = "[invalid video]"
-            self.thumbnail_url = None
+            self.thumbnailurl = None
             self.format = None
             self.resolution = None
 
@@ -114,7 +114,7 @@ def removeEntry(*args):
 def openEdit(*args):
     global thumbnail
     selection = videoListlist.curselection()
-    thumbnailUrl = videos[selection[0]].thumbnail_url
+    thumbnailUrl = videos[selection[0]].thumbnailurl
     response = requests.get(thumbnailUrl)
     img = ImageTk.PhotoImage(Image.open(BytesIO(response.content)))
     thumbnail['image'] = img
