@@ -26,15 +26,23 @@ class Video:
         try:
             self.yt = YouTube(self.url)
             self.title = self.yt.title
-            self.thumbnailurl = self.yt.thumbnail_url
+            self.thumbnail_url = self.yt.thumbnail_url
             self.format = "mp4"
             self.resolution = "720p"
+            self.availableQuality = []
+            availableMp4 = self.yt.streams.filter(file_extension='mp4', type="video")
+            for i in availableMp4:
+                if i.resolution not in self.availableQuality:
+                    self.availableQuality.append(i.resolution)
+                    self.availableQuality.sort()
+            self.stream = self.yt.streams.filter(resolution=self.resolution, file_extension=self.format)[0]
+
             # thumbnail url
         except Exception as e:
             print(e)
             self.yt = None
             self.title = "[invalid video]"
-            self.thumbnailurl = None
+            self.thumbnail_url = None
             self.format = None
             self.resolution = None
 
@@ -68,22 +76,12 @@ def searchStream():
 def download():
     global videoList, status
     for video in videos:
-        if(video.format == 'mp4'):
-            try:
-                stream = yt.streams.filter(res=video.resolution)[0]
-                #print(stream)
-                stream.download(output_path='video')
-                status.config(text = "download completed! check video/")
-            except Exception as e:
-                print(e)
-        if(video.format == 'mp3'):
-            try:
-                stream = yt.streams.filter(type='audio')[0]
-                print(stream)
-                stream.download(output_path='video')
-                status.config(text = "download completed! check video/")
-            except Exception as e:
-                print(e)
+        try:
+            stream = video.stream
+            stream.download(output_path='video')
+            status.config(text = "download completed! check video/")
+        except Exception as e:
+            print(e)
 
 def addEntry():
     global inputname, yt, status, url, videoList, frame
@@ -114,12 +112,13 @@ def removeEntry(*args):
 def openEdit(*args):
     global thumbnail
     selection = videoListlist.curselection()
-    thumbnailUrl = videos[selection[0]].thumbnailurl
+    thumbnailUrl = videos[selection[0]].thumbnail_url
     response = requests.get(thumbnailUrl)
-    img = ImageTk.PhotoImage(Image.open(BytesIO(response.content)))
-    thumbnail['image'] = img
-    thumbnail.image = img
-
+    img = Image.open(BytesIO(response.content))
+    resizedImg = img.resize((450, 350), Image.ANTIALIAS)
+    finalImg = ImageTk.PhotoImage(resizedImg)
+    thumbnail['image'] = finalImg
+    thumbnail.image = finalImg
 
 def main():
     global inputname, status, url, videoList, frame, videoListvar, videoListlist, inputname, thumbnail
@@ -157,7 +156,7 @@ def main():
     status = tkinter.Label(frame, text="")
 
     # download button
-    #downloadButton = tkinter.Button(frame, text="Download", commmand=download)
+    downloadButton = tkinter.Button(frame, text="Download", command=download)
 
     # thumbnail
     thumbnail = tkinter.Label(editFrame, text="Please select a video",image="")
@@ -169,13 +168,14 @@ def main():
     inputbutton.grid(column=2, row=0, sticky=(W))
     removebutton.grid(column=3, row=0, sticky=())
     status.grid(column=0, row=2)
-    #downloadButton.grid(column=4, row=2)
-    thumbnail.grid(column=0, row=0)
+    downloadButton.grid(column=4, row=2)
+    thumbnail.grid(column=0, row=0, columnspan=2)
 
     # frame configuration
     frame.columnconfigure(1, weight=1)
     frame.columnconfigure(4, weight=1)
     frame.rowconfigure(1, weight=1)
+    editFrame.columnconfigure(0, weight=1)
 
     window.mainloop()
 
