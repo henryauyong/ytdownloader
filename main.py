@@ -28,16 +28,15 @@ class Video:
             self.title = self.yt.title
             self.thumbnail_url = self.yt.thumbnail_url
             self.format = "mp4"
-            self.resolution = "720p"
-            self.availableQuality = []
-            availableMp4 = self.yt.streams.filter(file_extension='mp4', type="video")
+            self.resolution = "144p"
+            self.availableResolution = []
+            availableMp4 = self.yt.streams.filter(file_extension="mp4", type="video")
             for i in availableMp4:
-                if i.resolution not in self.availableQuality:
-                    self.availableQuality.append(i.resolution)
-                    self.availableQuality.sort()
+                if i.resolution not in self.availableResolution:
+                    self.availableResolution.append(i.resolution)
+                    self.availableResolution.sort()
+            self.resolution = self.availableResolution[-1]
             self.stream = self.yt.streams.filter(resolution=self.resolution, file_extension=self.format)[0]
-
-            # thumbnail url
         except Exception as e:
             print(e)
             self.yt = None
