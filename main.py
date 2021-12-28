@@ -16,12 +16,6 @@ import ffmpeg
 # videoListbox: tk.Listbox
 videos = []
 
-# todo
-# dropdown menu for resolution & format
-# 1080p download (Finished, bitch)
-# make download a method of Video,
-# and add a button to download only the current selected vid
-
 class Video:
     def __init__(self, url):
         self.url = url
@@ -57,12 +51,11 @@ def download():
     for video in videos:
         audio = video.yt.streams.filter(type="audio")[0]
         if(downloadFormat.get() == "video"):
-            res = 720
+            res = 720 # default
             for i in resolutionList:
                 if int(i[:-1]) <= int(str(resolutionListvar.get())[:-1]) and int(i[:-1]) in video.availableResolution:
                     res = int(i[:-1])
                     break
-            print(video.availableResolution)
             stream = video.yt.streams.filter(resolution=str(res) + "p", file_extension="mp4")[0]
 
             if(res >= 1080):
