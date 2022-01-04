@@ -16,7 +16,6 @@ A tk-based GUI for downloading YouTube videos.
 
 ## Installation
 - Python dependencies: `pip install -r requirements.txt`
-- ffmpeg: search for tutorial online
 - Run program: double-click main.py, or in windows terminal: `python main.py`
 
 ## TODO
