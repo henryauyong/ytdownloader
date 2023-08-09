@@ -42,7 +42,7 @@ class Video:
         pass
     def getThumbnail(self):
         imgResponse = requests.get(self.thumbnailUrl)
-        resizedThumbnail = Image.open(BytesIO(imgResponse.content)).resize((450, 350), Image.ANTIALIAS)
+        resizedThumbnail = Image.open(BytesIO(imgResponse.content)).resize((450, 350), Image.LANCZOS)
         return ImageTk.PhotoImage(resizedThumbnail)
 
 # download the whole list of videos
